@@ -85,3 +85,4 @@ src/
   main.jsx            -> ponto de entrada do React
   index.css           -> estilos globais (Tailwind)
 supabase-setup.sql    -> script para criar as tabelas no Supabase
+# painel-diretor
