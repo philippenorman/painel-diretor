@@ -1070,8 +1070,8 @@ function TelaFinanceiro({ financas, gastos, demandas, onCriarLancamento, onAtual
             <div className="col-span-3">CLIENTE / PROJETO</div>
             <div className="col-span-2">TRABALHO</div>
             <div className="col-span-2">PAGAMENTO</div>
-            <div className="col-span-1 text-right">VALOR</div>
-            <div className="col-span-3 text-right">STATUS</div>
+            <div className="col-span-2 text-right">VALOR</div>
+            <div className="col-span-2 text-right">STATUS</div>
             <div className="col-span-1 text-right"></div>
           </div>
           {lista.map((f) => {
@@ -1085,11 +1085,11 @@ function TelaFinanceiro({ financas, gastos, demandas, onCriarLancamento, onAtual
                 </div>
                 <div className="col-span-2 mono text-sm" style={{ color: '#9A9A9A' }}>{new Date(f.dataTrabalho + 'T00:00:00').toLocaleDateString('pt-BR')}</div>
                 <div className="col-span-2 mono text-sm" style={{ color: '#9A9A9A' }}>{new Date(f.dataPagamento + 'T00:00:00').toLocaleDateString('pt-BR')}</div>
-                <div className="col-span-1 text-right">
-                  <div className="mono text-sm">{moeda(f.valor)}</div>
-                  {f.comNF && <div className="mono text-[10px]" style={{ color: '#9A9A9A' }}>NF</div>}
+                <div className="col-span-2 text-right">
+                  <div className="mono text-sm">{moeda(f.valorBruto ?? f.valor)}</div>
+                  {f.comNF && <div className="mono text-[10px]" style={{ color: '#9A9A9A' }}>líq. {moeda(f.valor)}</div>}
                 </div>
-                <div className="col-span-3 flex justify-end items-center gap-2">
+                <div className="col-span-2 flex justify-end items-center gap-2">
                   <span
                     className="mono text-[11px] font-semibold px-2 py-1 rounded"
                     style={{ color: s.color, background: `${s.color}1F`, border: `1px solid ${s.color}55` }}
