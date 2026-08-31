@@ -46,9 +46,10 @@ function diasRestantes(data) {
   return Math.round((new Date(data + 'T00:00:00') - HOJE) / 86400000);
 }
 function prazoLabel(dias) {
-  if (dias < 0) return `ATRASO ${Math.abs(dias)}D`;
-  if (dias === 0) return 'HOJE';
-  return `T–${String(dias).padStart(2, '0')}D`;
+  if (dias < 0) return `Atrasado há ${Math.abs(dias)} dia${Math.abs(dias) === 1 ? '' : 's'}`;
+  if (dias === 0) return 'Hoje';
+  if (dias === 1) return 'Amanhã';
+  return `Faltam ${dias} dias`;
 }
 function gerarDias(ano, mes) {
   const primeiro = new Date(ano, mes, 1);
@@ -95,6 +96,7 @@ function mapDemandaDoBanco(row) {
     prazo: row.prazo,
     status: row.status,
     dataGravacao: row.data_gravacao,
+    datasGravacao: row.datas_gravacao || [],
     valor: Number(row.valor),
     comNF: row.com_nf,
   };
@@ -124,7 +126,7 @@ function mapGastoDoBanco(row) {
   };
 }
 
-const emptyDemanda = { cliente: '', projeto: '', etapa: ETAPAS[0], prazo: '', status: 'andamento', dataGravacao: null, valor: '', comNF: false, dataPagamento: '' };
+const emptyDemanda = { cliente: '', projeto: '', etapa: ETAPAS[0], prazo: '', status: 'andamento', dataGravacao: null, datasGravacao: [], valor: '', comNF: false, dataPagamento: '' };
 const emptyFinanca = { cliente: '', projeto: '', valor: '', dataTrabalho: '', dataPagamento: '', pago: false };
 const emptyGasto = { projeto: '', cliente: '', descricao: '', valor: '', data: '' };
 
@@ -254,6 +256,7 @@ export default function App() {
         prazo: form.prazo,
         status: form.status,
         data_gravacao: form.dataGravacao || null,
+        datas_gravacao: form.etapa === 'Gravação' ? (form.datasGravacao || []) : [],
         valor: valorBruto,
         com_nf: form.comNF,
       })
@@ -299,8 +302,8 @@ export default function App() {
     carregarTudo();
   }
 
-  async function togglePagoLancamento(f) {
-    const { error } = await supabase.from('financas').update({ pago: !f.pago }).eq('id', f.id);
+  async function atualizarStatusPagamento(f, novoPago) {
+    const { error } = await supabase.from('financas').update({ pago: novoPago }).eq('id', f.id);
     if (error) alert('Erro ao atualizar status: ' + error.message);
     carregarTudo();
   }
@@ -422,7 +425,56 @@ export default function App() {
 
       {aba === 'demandas' && <TelaDemandas demandas={demandas} onCriar={criarDemanda} onExcluir={excluirDemanda} />}
       {aba === 'agenda' && <TelaAgenda demandas={demandas} financas={financas} />}
-      {aba === 'financeiro' && <TelaFinanceiro financas={financas} gastos={gastos} demandas={demandas} onCriarLancamento={criarLancamento} onTogglePago={togglePagoLancamento} onExcluirLancamento={excluirLancamento} onCriarGasto={criarGasto} onExcluirGasto={excluirGasto} />}
+      {aba === 'financeiro' && <TelaFinanceiro financas={financas} gastos={gastos} demandas={demandas} onCriarLancamento={criarLancamento} onAtualizarStatus={atualizarStatusPagamento} onExcluirLancamento={excluirLancamento} onCriarGasto={criarGasto} onExcluirGasto={excluirGasto} />}
+    </div>
+  );
+}
+
+/* ---------- Seletor de múltiplos dias (usado na gravação) ---------- */
+function SeletorDiasMultiplos({ selecionados, onChange }) {
+  const [mesAtual, setMesAtual] = useState(new Date());
+  const dias = useMemo(() => gerarDias(mesAtual.getFullYear(), mesAtual.getMonth()), [mesAtual]);
+
+  function alternar(chave) {
+    if (selecionados.includes(chave)) onChange(selecionados.filter((d) => d !== chave));
+    else onChange([...selecionados, chave].sort());
+  }
+
+  return (
+    <div className="rounded p-2" style={{ border: '1px solid #262626' }}>
+      <div className="flex items-center justify-between mb-2">
+        <button type="button" onClick={() => setMesAtual(new Date(mesAtual.getFullYear(), mesAtual.getMonth() - 1, 1))} className="focusable p-1" aria-label="Mês anterior">
+          <ChevronLeft size={14} color="#9A9A9A" />
+        </button>
+        <span className="mono text-[11px] tracking-widest">{MESES[mesAtual.getMonth()].toUpperCase()} {mesAtual.getFullYear()}</span>
+        <button type="button" onClick={() => setMesAtual(new Date(mesAtual.getFullYear(), mesAtual.getMonth() + 1, 1))} className="focusable p-1" aria-label="Próximo mês">
+          <ChevronRight size={14} color="#9A9A9A" />
+        </button>
+      </div>
+      <div className="grid grid-cols-7 gap-1 mb-1">
+        {DIAS_SEMANA.map((d, i) => <div key={i} className="mono text-[9px] text-center" style={{ color: '#9A9A9A' }}>{d}</div>)}
+      </div>
+      <div className="grid grid-cols-7 gap-1">
+        {dias.map((d, i) => {
+          if (!d) return <div key={i} />;
+          const chave = chaveData(d);
+          const ativo = selecionados.includes(chave);
+          return (
+            <button
+              type="button"
+              key={i}
+              onClick={() => alternar(chave)}
+              className="focusable mono text-[10px] rounded"
+              style={{ padding: '5px 0', background: ativo ? '#F5C518' : 'transparent', color: ativo ? '#0A0A0A' : '#EDEDED', border: '1px solid #262626' }}
+            >
+              {d.getDate()}
+            </button>
+          );
+        })}
+      </div>
+      <div className="mono text-[10px] mt-2" style={{ color: '#9A9A9A' }}>
+        {selecionados.length === 0 ? 'Nenhum dia selecionado' : `${selecionados.length} dia${selecionados.length === 1 ? '' : 's'} selecionado${selecionados.length === 1 ? '' : 's'}`}
+      </div>
     </div>
   );
 }
@@ -548,8 +600,17 @@ function TelaDemandas({ demandas, onCriar, onExcluir }) {
               <select value={form.etapa} onChange={(e) => setForm({ ...form, etapa: e.target.value })} className="focusable rounded px-3 py-2 text-sm">
                 {ETAPAS.map((et) => <option key={et}>{et}</option>)}
               </select>
+              {form.etapa === 'Gravação' && (
+                <div className="flex flex-col gap-1">
+                  <span className="mono text-[11px]" style={{ color: '#9A9A9A' }}>DIAS DE GRAVAÇÃO</span>
+                  <SeletorDiasMultiplos
+                    selecionados={form.datasGravacao}
+                    onChange={(novos) => setForm({ ...form, datasGravacao: novos })}
+                  />
+                </div>
+              )}
               <div className="flex flex-col gap-1">
-                <span className="mono text-[11px]" style={{ color: '#9A9A9A' }}>PRAZO DE ENTREGA</span>
+                <span className="mono text-[11px]" style={{ color: '#9A9A9A' }}>DATA</span>
                 <input required type="date" value={form.prazo} onChange={(e) => setForm({ ...form, prazo: e.target.value })} className="focusable rounded px-3 py-2 text-sm" />
               </div>
               <select value={form.status} onChange={(e) => setForm({ ...form, status: e.target.value })} className="focusable rounded px-3 py-2 text-sm">
@@ -632,7 +693,10 @@ function TelaAgenda({ demandas, financas }) {
     const add = (data, ev) => { if (!data) return; if (!map[data]) map[data] = []; map[data].push(ev); };
     demandas.forEach((d) => {
       if (d.etapa === 'Briefing') add(d.prazo, { id: `b-${d.id}`, titulo: `Briefing — ${d.projeto}`, tipo: 'briefing', cliente: d.cliente, diaTodo: true });
-      if (d.etapa === 'Gravação') add(d.dataGravacao || d.prazo, { id: `g-${d.id}`, titulo: `Gravação — ${d.projeto}`, tipo: 'gravacao', cliente: d.cliente, diaTodo: true });
+      if (d.etapa === 'Gravação') {
+        const diasGravacao = (d.datasGravacao && d.datasGravacao.length > 0) ? d.datasGravacao : (d.dataGravacao ? [d.dataGravacao] : [d.prazo]);
+        diasGravacao.forEach((data, idx) => add(data, { id: `g-${d.id}-${idx}`, titulo: `Gravação — ${d.projeto}`, tipo: 'gravacao', cliente: d.cliente, diaTodo: true }));
+      }
       if (d.etapa === 'Entrega') add(d.prazo, { id: `e-${d.id}`, titulo: `Entrega — ${d.projeto}`, tipo: 'entrega', cliente: d.cliente, diaTodo: true });
     });
     financas.forEach((f) => add(f.dataPagamento, { id: `p-${f.id}`, titulo: `Pagamento — ${f.projeto}`, tipo: 'pagamento', cliente: f.cliente, diaTodo: true }));
@@ -815,7 +879,7 @@ function TelaAgenda({ demandas, financas }) {
 }
 
 /* ---------- Tela: Financeiro ---------- */
-function TelaFinanceiro({ financas, gastos, demandas, onCriarLancamento, onTogglePago, onExcluirLancamento, onCriarGasto, onExcluirGasto }) {
+function TelaFinanceiro({ financas, gastos, demandas, onCriarLancamento, onAtualizarStatus, onExcluirLancamento, onCriarGasto, onExcluirGasto }) {
   const [subAba, setSubAba] = useState('receber');
   const [formAberto, setFormAberto] = useState(false);
   const [form, setForm] = useState(emptyFinanca);
@@ -844,8 +908,8 @@ function TelaFinanceiro({ financas, gastos, demandas, onCriarLancamento, onToggl
     }));
   }, [financas, gastos]);
 
-  async function togglePago(f) {
-    await onTogglePago(f);
+  async function mudarStatus(f, novoStatus) {
+    await onAtualizarStatus(f, novoStatus === 'pago');
   }
 
   async function excluirLancamento(f) {
@@ -932,8 +996,8 @@ function TelaFinanceiro({ financas, gastos, demandas, onCriarLancamento, onToggl
             <div className="col-span-3">CLIENTE / PROJETO</div>
             <div className="col-span-2">TRABALHO</div>
             <div className="col-span-2">PAGAMENTO</div>
-            <div className="col-span-2 text-right">VALOR</div>
-            <div className="col-span-2 text-right">STATUS</div>
+            <div className="col-span-1 text-right">VALOR</div>
+            <div className="col-span-3 text-right">STATUS</div>
             <div className="col-span-1 text-right"></div>
           </div>
           {lista.map((f) => {
@@ -947,19 +1011,26 @@ function TelaFinanceiro({ financas, gastos, demandas, onCriarLancamento, onToggl
                 </div>
                 <div className="col-span-2 mono text-sm" style={{ color: '#9A9A9A' }}>{new Date(f.dataTrabalho + 'T00:00:00').toLocaleDateString('pt-BR')}</div>
                 <div className="col-span-2 mono text-sm" style={{ color: '#9A9A9A' }}>{new Date(f.dataPagamento + 'T00:00:00').toLocaleDateString('pt-BR')}</div>
-                <div className="col-span-2 text-right">
+                <div className="col-span-1 text-right">
                   <div className="mono text-sm">{moeda(f.valor)}</div>
-                  {f.comNF && <div className="mono text-[10px]" style={{ color: '#9A9A9A' }}>NF · bruto {moeda(f.valorBruto ?? f.valor)}</div>}
+                  {f.comNF && <div className="mono text-[10px]" style={{ color: '#9A9A9A' }}>NF</div>}
                 </div>
-                <div className="col-span-2 flex justify-end">
-                  <button
-                    onClick={() => togglePago(f)}
-                    className="badge-btn focusable mono text-[11px] font-semibold px-2 py-1 rounded"
-                    title="Clique para marcar/desmarcar como pago"
+                <div className="col-span-3 flex justify-end items-center gap-2">
+                  <span
+                    className="mono text-[11px] font-semibold px-2 py-1 rounded"
                     style={{ color: s.color, background: `${s.color}1F`, border: `1px solid ${s.color}55` }}
                   >
                     {s.label.toUpperCase()}
-                  </button>
+                  </span>
+                  <select
+                    value={f.pago ? 'pago' : 'pendente'}
+                    onChange={(e) => mudarStatus(f, e.target.value)}
+                    className="focusable rounded text-xs py-1"
+                    title="Alterar status"
+                  >
+                    <option value="pendente">Pendente</option>
+                    <option value="pago">Pago</option>
+                  </select>
                 </div>
                 <div className="col-span-1 flex justify-end">
                   <button onClick={() => excluirLancamento(f)} className="focusable" title="Excluir lançamento" style={{ color: '#9A9A9A' }}>
@@ -1022,11 +1093,14 @@ function TelaGastos({ gastos, financas, demandas, onCriar, onExcluir }) {
   const grupos = useMemo(() => {
     const projetos = new Set([...financas.map((f) => f.projeto), ...gastos.map((g) => g.projeto)]);
     return Array.from(projetos).map((projeto) => {
-      const cliente = financas.find((f) => f.projeto === projeto)?.cliente || gastos.find((g) => g.projeto === projeto)?.cliente || '—';
-      const valorProjeto = financas.filter((f) => f.projeto === projeto).reduce((s, f) => s + f.valor, 0);
+      const financasDoProjeto = financas.filter((f) => f.projeto === projeto);
+      const cliente = financasDoProjeto[0]?.cliente || gastos.find((g) => g.projeto === projeto)?.cliente || '—';
+      const valorProjeto = financasDoProjeto.reduce((s, f) => s + (f.valorBruto ?? f.valor), 0);
+      const valorLiquido = financasDoProjeto.reduce((s, f) => s + f.valor, 0);
+      const temNF = financasDoProjeto.some((f) => f.comNF);
       const itens = gastos.filter((g) => g.projeto === projeto);
       const totalGastos = itens.reduce((s, g) => s + g.valor, 0);
-      return { projeto, cliente, valorProjeto, itens, totalGastos, lucro: valorProjeto - totalGastos };
+      return { projeto, cliente, valorProjeto, valorLiquido, temNF, itens, totalGastos, lucro: valorLiquido - totalGastos };
     }).filter((g) => g.valorProjeto > 0 || g.itens.length > 0);
   }, [financas, gastos]);
 
@@ -1059,12 +1133,23 @@ function TelaGastos({ gastos, financas, demandas, onCriar, onExcluir }) {
             <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 mb-4">
               <div>
                 <div className="text-xs" style={{ color: '#9A9A9A' }}>{g.cliente}</div>
-                <h3 className="font-semibold text-base">{g.projeto}</h3>
+                <div className="flex items-center gap-2">
+                  <h3 className="font-semibold text-base">{g.projeto}</h3>
+                  {g.temNF && (
+                    <span
+                      className="mono text-[9px] font-semibold px-1.5 py-0.5 rounded"
+                      style={{ color: '#8A8F98', background: '#8A8F981F', border: '1px solid #8A8F9555' }}
+                    >
+                      COM NF
+                    </span>
+                  )}
+                </div>
               </div>
               <div className="flex gap-5">
                 <div>
                   <div className="mono text-[10px] tracking-widest" style={{ color: '#9A9A9A' }}>PROJETO</div>
                   <div className="mono text-sm font-semibold" style={{ color: '#F5C518' }}>{moeda(g.valorProjeto)}</div>
+                  {g.temNF && <div className="mono text-[10px]" style={{ color: '#9A9A9A' }}>líq. {moeda(g.valorLiquido)}</div>}
                 </div>
                 <div>
                   <div className="mono text-[10px] tracking-widest" style={{ color: '#9A9A9A' }}>GASTOS</div>
