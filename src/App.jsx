@@ -39,7 +39,8 @@ const seedFinancas = [];
 
 const seedGastos = [];
 
-const HOJE = new Date('2026-07-31T00:00:00');
+const HOJE = new Date();
+HOJE.setHours(0, 0, 0, 0);
 const moeda = (v) => v.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
 
 function diasRestantes(data) {
@@ -751,7 +752,7 @@ function expandirIntervalo(inicio, fim) {
 const emptyEvento = { titulo: '', cliente: '', tipo: 'gravacao', descricao: '', diaTodo: true, dataInicio: '', dataFim: '', horaInicio: '', horaFim: '', datasSelecionadas: [] };
 
 function TelaAgenda({ demandas, financas }) {
-  const [mesAtual, setMesAtual] = useState(new Date(2026, 7, 1));
+  const [mesAtual, setMesAtual] = useState(() => { const hoje = new Date(); return new Date(hoje.getFullYear(), hoje.getMonth(), 1); });
   const [diaSelecionado, setDiaSelecionado] = useState(null);
   const [eventosManuais, setEventosManuais] = useState([]);
   const [formAberto, setFormAberto] = useState(false);
