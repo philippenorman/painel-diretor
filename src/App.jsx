@@ -837,9 +837,14 @@ function TelaAgenda({ demandas, financas }) {
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
         <div className="card rounded-lg p-4 md:p-5 lg:col-span-2">
           <div className="flex items-center justify-between mb-4">
-            <button onClick={() => trocarMes(-1)} className="focusable p-1 rounded" aria-label="Mês anterior"><ChevronLeft size={18} color="#9A9A9A" /></button>
-            <span className="mono text-sm font-semibold tracking-widest">{MESES[mesAtual.getMonth()].toUpperCase()} {mesAtual.getFullYear()}</span>
-            <button onClick={() => trocarMes(1)} className="focusable p-1 rounded" aria-label="Próximo mês"><ChevronRight size={18} color="#9A9A9A" /></button>
+            <button onClick={() => trocarMes(-1)} className="focusable p-1 rounded" aria-label="Mês anterior"><ChevronLeft size={20} color="#9A9A9A" /></button>
+            <span
+              className="mono text-lg md:text-xl font-bold tracking-widest px-4 py-1.5 rounded"
+              style={{ background: '#F5C5181A', border: '1px solid #F5C51855', color: '#F5C518' }}
+            >
+              {MESES[mesAtual.getMonth()].toUpperCase()} {mesAtual.getFullYear()}
+            </span>
+            <button onClick={() => trocarMes(1)} className="focusable p-1 rounded" aria-label="Próximo mês"><ChevronRight size={20} color="#9A9A9A" /></button>
           </div>
           <div className="grid grid-cols-7 gap-1 mb-1">
             {DIAS_SEMANA.map((d, i) => <div key={i} className="mono text-[11px] text-center py-1" style={{ color: '#9A9A9A' }}>{d}</div>)}
