@@ -131,23 +131,33 @@ const emptyDemanda = { cliente: '', projeto: '', etapa: ETAPAS[0], prazo: '', st
 const emptyFinanca = { cliente: '', projeto: '', valor: '', dataTrabalho: '', dataPagamento: '', pago: false };
 const emptyGasto = { projeto: '', cliente: '', descricao: '', valor: '', data: '' };
 
-// Credenciais de acesso — troque aqui para o usuário/senha que preferir.
-const CREDENCIAIS = { usuario: 'norman', senha: 'filmcrew2026' };
-
 /* ---------- Tela: Login ---------- */
-function TelaLogin({ onLogin }) {
-  const [usuario, setUsuario] = useState('');
+function TelaLogin() {
+  const [modo, setModo] = useState('entrar'); // 'entrar' | 'cadastrar'
+  const [email, setEmail] = useState('');
   const [senha, setSenha] = useState('');
   const [erro, setErro] = useState('');
+  const [mensagem, setMensagem] = useState('');
+  const [carregando, setCarregando] = useState(false);
 
-  function entrar(e) {
+  async function enviar(e) {
     e.preventDefault();
-    if (usuario === CREDENCIAIS.usuario && senha === CREDENCIAIS.senha) {
-      setErro('');
-      onLogin();
+    setErro('');
+    setMensagem('');
+    setCarregando(true);
+
+    if (modo === 'entrar') {
+      const { error } = await supabase.auth.signInWithPassword({ email, password: senha });
+      if (error) setErro(error.message === 'Invalid login credentials' ? 'E-mail ou senha incorretos.' : error.message);
     } else {
-      setErro('Usuário ou senha incorretos.');
+      const { data, error } = await supabase.auth.signUp({ email, password: senha });
+      if (error) {
+        setErro(error.message);
+      } else if (data.user && !data.session) {
+        setMensagem('Conta criada! Verifique seu e-mail para confirmar antes de entrar.');
+      }
     }
+    setCarregando(false);
   }
 
   return (
@@ -159,7 +169,7 @@ function TelaLogin({ onLogin }) {
         input:focus { outline: 2px solid #F5C518; outline-offset: 1px; }
         .focusable:focus-visible { outline: 2px solid #F5C518; outline-offset: 2px; }
       `}</style>
-      <form onSubmit={entrar} className="w-full max-w-xs rounded-lg p-6" style={{ background: '#141414', border: '1px solid #262626' }}>
+      <form onSubmit={enviar} className="w-full max-w-xs rounded-lg p-6" style={{ background: '#141414', border: '1px solid #262626' }}>
         <div className="flex flex-col items-center gap-3 mb-6">
           <img src={LOGO_SRC} alt="Norman" style={{ width: 64, height: 64, borderRadius: '9999px' }} />
           <div className="text-center">
@@ -167,11 +177,34 @@ function TelaLogin({ onLogin }) {
             <h1 className="mono text-lg font-semibold">Norman Film Crew</h1>
           </div>
         </div>
+
+        <div className="flex gap-1 p-1 rounded mb-4" style={{ background: '#0A0A0A', border: '1px solid #262626' }}>
+          <button
+            type="button"
+            onClick={() => { setModo('entrar'); setErro(''); setMensagem(''); }}
+            className="flex-1 mono text-xs font-semibold py-1.5 rounded"
+            style={{ background: modo === 'entrar' ? '#F5C518' : 'transparent', color: modo === 'entrar' ? '#0A0A0A' : '#9A9A9A' }}
+          >
+            Entrar
+          </button>
+          <button
+            type="button"
+            onClick={() => { setModo('cadastrar'); setErro(''); setMensagem(''); }}
+            className="flex-1 mono text-xs font-semibold py-1.5 rounded"
+            style={{ background: modo === 'cadastrar' ? '#F5C518' : 'transparent', color: modo === 'cadastrar' ? '#0A0A0A' : '#9A9A9A' }}
+          >
+            Criar conta
+          </button>
+        </div>
+
         <div className="flex flex-col gap-3">
-          <input required placeholder="Usuário" value={usuario} onChange={(e) => setUsuario(e.target.value)} className="focusable rounded px-3 py-2 text-sm" />
-          <input required type="password" placeholder="Senha" value={senha} onChange={(e) => setSenha(e.target.value)} className="focusable rounded px-3 py-2 text-sm" />
+          <input required type="email" placeholder="E-mail" value={email} onChange={(e) => setEmail(e.target.value)} className="focusable rounded px-3 py-2 text-sm" />
+          <input required type="password" placeholder="Senha (mín. 6 caracteres)" value={senha} onChange={(e) => setSenha(e.target.value)} minLength={6} className="focusable rounded px-3 py-2 text-sm" />
           {erro && <p className="mono text-xs" style={{ color: '#E63946' }}>{erro}</p>}
-          <button type="submit" className="focusable mono text-sm font-semibold rounded py-2 mt-1" style={{ background: '#F5C518', color: '#0A0A0A' }}>Entrar</button>
+          {mensagem && <p className="mono text-xs" style={{ color: '#2ECC71' }}>{mensagem}</p>}
+          <button type="submit" disabled={carregando} className="focusable mono text-sm font-semibold rounded py-2 mt-1" style={{ background: '#F5C518', color: '#0A0A0A', opacity: carregando ? 0.6 : 1 }}>
+            {carregando ? 'Aguarde...' : modo === 'entrar' ? 'Entrar' : 'Criar conta'}
+          </button>
         </div>
       </form>
     </div>
@@ -185,27 +218,22 @@ export default function App() {
   const [financas, setFinancas] = useState(seedFinancas);
   const [gastos, setGastos] = useState(seedGastos);
   const [carregado, setCarregado] = useState(false);
-  const [autenticado, setAutenticado] = useState(false);
+  const [session, setSession] = useState(null);
   const [authCarregado, setAuthCarregado] = useState(false);
 
   useEffect(() => {
-    try {
-      if (localStorage.getItem('painel_sessao_ativa') === 'true') setAutenticado(true);
-    } catch (e) {
-      console.error('Erro ao checar sessão salva:', e);
-    } finally {
+    supabase.auth.getSession().then(({ data }) => {
+      setSession(data.session);
       setAuthCarregado(true);
-    }
+    });
+    const { data: listener } = supabase.auth.onAuthStateChange((_evento, novaSessao) => {
+      setSession(novaSessao);
+    });
+    return () => listener.subscription.unsubscribe();
   }, []);
 
-  function handleLogin() {
-    setAutenticado(true);
-    localStorage.setItem('painel_sessao_ativa', 'true');
-  }
-
-  function handleLogout() {
-    setAutenticado(false);
-    localStorage.setItem('painel_sessao_ativa', 'false');
+  async function handleLogout() {
+    await supabase.auth.signOut();
   }
 
   const [erroConexao, setErroConexao] = useState(false);
@@ -231,7 +259,7 @@ export default function App() {
   }
 
   useEffect(() => {
-    if (!autenticado || !supabaseConfigurado) return;
+    if (!session || !supabaseConfigurado) return;
     carregarTudo();
 
     // Sincronização em tempo real: quando qualquer aparelho muda algo,
@@ -244,7 +272,7 @@ export default function App() {
       .subscribe();
 
     return () => { supabase.removeChannel(canal); };
-  }, [autenticado]);
+  }, [session]);
 
   async function criarDemanda(form) {
     const valorBruto = Number(form.valor);
@@ -386,8 +414,8 @@ export default function App() {
     return <div style={{ background: '#000000', minHeight: '100vh' }} />;
   }
 
-  if (!autenticado) {
-    return <TelaLogin onLogin={handleLogin} />;
+  if (!session) {
+    return <TelaLogin />;
   }
 
   if (!carregado) {
@@ -448,6 +476,7 @@ export default function App() {
               </button>
             ))}
           </nav>
+          <span className="mono text-[11px] hidden md:inline" style={{ color: '#9A9A9A' }}>{session.user.email}</span>
           <button
             onClick={handleLogout}
             className="focusable mono text-xs font-semibold px-3 py-2 rounded"
