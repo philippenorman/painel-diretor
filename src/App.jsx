@@ -959,9 +959,9 @@ function TelaFinanceiro({ financas, gastos, demandas, onCriarLancamento, onAtual
   const [form, setForm] = useState(emptyFinanca);
 
   const resumo = useMemo(() => {
-    const aReceber = financas.filter((f) => statusFinanceiro(f) !== 'pago').reduce((s, f) => s + f.valor, 0);
-    const recebido = financas.filter((f) => f.pago).reduce((s, f) => s + f.valor, 0);
-    const atrasado = financas.filter((f) => statusFinanceiro(f) === 'atrasado').reduce((s, f) => s + f.valor, 0);
+    const aReceber = financas.filter((f) => statusFinanceiro(f) !== 'pago').reduce((s, f) => s + (f.valorBruto ?? f.valor), 0);
+    const recebido = financas.filter((f) => f.pago).reduce((s, f) => s + (f.valorBruto ?? f.valor), 0);
+    const atrasado = financas.filter((f) => statusFinanceiro(f) === 'atrasado').reduce((s, f) => s + (f.valorBruto ?? f.valor), 0);
     return { aReceber, recebido, atrasado };
   }, [financas]);
 
@@ -977,7 +977,7 @@ function TelaFinanceiro({ financas, gastos, demandas, onCriarLancamento, onAtual
     gastos.forEach((g) => chaves.add(mesChave(g.data)));
     return Array.from(chaves).sort().map((chave) => ({
       mes: mesLabelCurto(chave),
-      entrada: financas.filter((f) => f.pago && mesChave(f.dataPagamento) === chave).reduce((s, f) => s + f.valor, 0),
+      entrada: financas.filter((f) => f.pago && mesChave(f.dataPagamento) === chave).reduce((s, f) => s + (f.valorBruto ?? f.valor), 0),
       saida: gastos.filter((g) => mesChave(g.data) === chave).reduce((s, g) => s + g.valor, 0),
     }));
   }, [financas, gastos]);
