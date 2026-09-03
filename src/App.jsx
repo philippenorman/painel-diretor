@@ -449,17 +449,28 @@ export default function App() {
       `}</style>
 
       {/* Header */}
-      <div className="flex flex-col md:flex-row md:items-end justify-between gap-4 mb-6">
-        <div className="flex items-center gap-3">
-          <img src={LOGO_SRC} alt="Norman" style={{ width: 64, height: 64, borderRadius: '9999px', flexShrink: 0 }} />
-          <div>
-            <div className="flex items-center gap-2 mb-1">
-              <span className="mono text-xs tracking-widest" style={{ color: '#9A9A9A' }}>PAINEL DO DIRETOR</span>
+      <div className="flex flex-col gap-4 mb-6">
+        <div className="flex items-center justify-between gap-3">
+          <div className="flex items-center gap-2 sm:gap-3 min-w-0">
+            <img src={LOGO_SRC} alt="Norman" className="w-11 h-11 sm:w-16 sm:h-16 rounded-full flex-shrink-0" />
+            <div className="min-w-0">
+              <div className="hidden sm:flex items-center gap-2 mb-1">
+                <span className="mono text-xs tracking-widest" style={{ color: '#9A9A9A' }}>PAINEL DO DIRETOR</span>
+              </div>
+              <h1 className="mono text-lg sm:text-2xl md:text-3xl font-semibold tracking-tight truncate">Norman Film Crew</h1>
             </div>
-            <h1 className="mono text-2xl md:text-3xl font-semibold tracking-tight">Norman Film Crew</h1>
           </div>
+          <button
+            onClick={handleLogout}
+            className="focusable mono text-xs font-semibold px-2.5 py-2 rounded flex-shrink-0"
+            style={{ background: 'transparent', color: '#9A9A9A', border: '1px solid #262626' }}
+            title="Sair"
+          >
+            Sair
+          </button>
         </div>
-        <div className="flex items-center gap-2">
+
+        <div className="flex items-center justify-between gap-2 flex-wrap">
           <nav className="flex gap-1 p-1 rounded flex-wrap" style={{ background: '#141414', border: '1px solid #262626' }}>
             {[
               { key: 'demandas', label: 'Demandas', icon: LayoutGrid },
@@ -469,22 +480,14 @@ export default function App() {
               <button
                 key={key}
                 onClick={() => setAba(key)}
-                className="focusable mono flex items-center gap-2 px-4 py-2 rounded text-sm font-semibold"
+                className="focusable mono flex items-center gap-2 px-3 sm:px-4 py-2 rounded text-xs sm:text-sm font-semibold"
                 style={{ background: aba === key ? '#F5C518' : 'transparent', color: aba === key ? '#0A0A0A' : '#9A9A9A' }}
               >
                 <Icon size={14} /> {label}
               </button>
             ))}
           </nav>
-          <span className="mono text-[11px] hidden md:inline" style={{ color: '#9A9A9A' }}>{session.user.email}</span>
-          <button
-            onClick={handleLogout}
-            className="focusable mono text-xs font-semibold px-3 py-2 rounded"
-            style={{ background: 'transparent', color: '#9A9A9A', border: '1px solid #262626' }}
-            title="Sair"
-          >
-            Sair
-          </button>
+          <span className="mono text-[11px] truncate" style={{ color: '#9A9A9A' }}>{session.user.email}</span>
         </div>
       </div>
 
@@ -692,7 +695,7 @@ function TelaDemandas({ demandas, financas, onCriar, onAtualizar, onExcluir }) {
       </div>
 
       {formAberto && (
-        <div className="fixed inset-0 flex items-center justify-center p-4" style={{ background: 'rgba(0,0,0,0.6)' }}>
+        <div className="fixed inset-0 flex items-start sm:items-center justify-center p-4 overflow-y-auto py-8" style={{ background: 'rgba(0,0,0,0.6)' }}>
           <form onSubmit={salvar} className="card rounded-lg p-6 w-full max-w-sm">
             <div className="flex items-center justify-between mb-4">
               <h2 className="mono text-sm tracking-widest" style={{ color: '#9A9A9A' }}>{editando ? 'EDITAR DEMANDA' : 'NOVA DEMANDA'}</h2>
@@ -864,7 +867,7 @@ function TelaAgenda({ demandas, financas }) {
         </button>
       </div>
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
-        <div className="card rounded-lg p-4 md:p-5 lg:col-span-2">
+        <div className="card rounded-lg p-2 sm:p-4 md:p-5 lg:col-span-2">
           <div className="flex items-center justify-between mb-4">
             <button onClick={() => trocarMes(-1)} className="focusable p-1 rounded" aria-label="Mês anterior"><ChevronLeft size={20} color="#9A9A9A" /></button>
             <span
@@ -884,19 +887,24 @@ function TelaAgenda({ demandas, financas }) {
               const chave = chaveData(d);
               const eventos = ordenarEventosDia(eventosPorDia[chave] || []);
               const selecionado = diaSelecionado && chaveData(diaSelecionado) === chave;
-              const visiveis = eventos.slice(0, 3);
+              const visiveis = eventos.slice(0, 2);
               const restante = eventos.length - visiveis.length;
               return (
-                <div key={i} onClick={() => setDiaSelecionado(d)} className="day-cell rounded p-1 flex flex-col items-stretch" style={{ minHeight: 92, background: selecionado ? 'rgba(245,197,24,0.08)' : 'transparent', borderColor: selecionado ? '#F5C518' : '#1C1C1C' }}>
-                  <span className="mono text-xs px-0.5" style={{ color: '#9A9A9A' }}>{d.getDate()}</span>
-                  <div className="flex flex-col gap-0.5 mt-1">
+                <div
+                  key={i}
+                  onClick={() => setDiaSelecionado(d)}
+                  className="day-cell rounded p-0.5 sm:p-1 flex flex-col items-stretch min-h-[56px] sm:min-h-[92px]"
+                  style={{ background: selecionado ? 'rgba(245,197,24,0.08)' : 'transparent', borderColor: selecionado ? '#F5C518' : '#1C1C1C' }}
+                >
+                  <span className="mono text-[10px] sm:text-xs px-0.5" style={{ color: '#9A9A9A' }}>{d.getDate()}</span>
+                  <div className="flex flex-col gap-0.5 mt-0.5 sm:mt-1">
                     {visiveis.map((ev) => {
                       const bg = cores[ev.tipo] || TIPO_EVENTO[ev.tipo].color;
                       return (
                         <div
                           key={ev.id}
                           className="mono truncate"
-                          style={{ background: bg, color: corTexto(bg), fontSize: 9, lineHeight: '15px', borderRadius: 3, padding: '0 4px' }}
+                          style={{ background: bg, color: corTexto(bg), fontSize: 8, lineHeight: '13px', borderRadius: 3, padding: '0 3px' }}
                           title={ev.diaTodo === false ? `${ev.horaInicio || ''} ${ev.titulo}` : ev.titulo}
                         >
                           {ev.diaTodo === false && ev.horaInicio ? `${ev.horaInicio} ` : ''}{ev.titulo}
@@ -904,7 +912,7 @@ function TelaAgenda({ demandas, financas }) {
                       );
                     })}
                     {restante > 0 && (
-                      <div className="mono px-1" style={{ fontSize: 9, color: '#9A9A9A' }}>+{restante} mais</div>
+                      <div className="mono px-1" style={{ fontSize: 8, color: '#9A9A9A' }}>+{restante}</div>
                     )}
                   </div>
                 </div>
@@ -960,7 +968,7 @@ function TelaAgenda({ demandas, financas }) {
       </div>
 
       {formAberto && (
-        <div className="fixed inset-0 flex items-center justify-center p-4" style={{ background: 'rgba(0,0,0,0.6)' }}>
+        <div className="fixed inset-0 flex items-start sm:items-center justify-center p-4 overflow-y-auto py-8" style={{ background: 'rgba(0,0,0,0.6)' }}>
           <form onSubmit={adicionarTrabalho} className="card rounded-lg p-6 w-full max-w-sm">
             <div className="flex items-center justify-between mb-4">
               <h2 className="mono text-sm tracking-widest" style={{ color: '#9A9A9A' }}>NOVO TRABALHO</h2>
@@ -1135,7 +1143,8 @@ function TelaFinanceiro({ financas, gastos, demandas, onCriarLancamento, onAtual
 
       {subAba !== 'gastos' && (
         <div className="card rounded-lg overflow-hidden">
-          <div className="grid grid-cols-12 px-4 py-2 mono text-[11px] tracking-widest" style={{ color: '#9A9A9A', borderBottom: '1px solid #262626' }}>
+          {/* Cabeçalho — só desktop */}
+          <div className="hidden sm:grid grid-cols-12 px-4 py-2 mono text-[11px] tracking-widest" style={{ color: '#9A9A9A', borderBottom: '1px solid #262626' }}>
             <div className="col-span-3">CLIENTE / PROJETO</div>
             <div className="col-span-2">TRABALHO</div>
             <div className="col-span-2">PAGAMENTO</div>
@@ -1143,42 +1152,73 @@ function TelaFinanceiro({ financas, gastos, demandas, onCriarLancamento, onAtual
             <div className="col-span-2 text-right">STATUS</div>
             <div className="col-span-1 text-right"></div>
           </div>
+
           {lista.map((f) => {
             const statusKey = statusFinanceiro(f);
             const s = STATUS_FIN[statusKey];
+            const statusEl = (
+              <>
+                <span
+                  className="mono text-[11px] font-semibold px-2 py-1 rounded"
+                  style={{ color: s.color, background: `${s.color}1F`, border: `1px solid ${s.color}55` }}
+                >
+                  {s.label.toUpperCase()}
+                </span>
+                <select
+                  value={f.pago ? 'pago' : 'pendente'}
+                  onChange={(e) => mudarStatus(f, e.target.value)}
+                  className="focusable rounded text-xs py-1"
+                  title="Alterar status"
+                >
+                  <option value="pendente">Pendente</option>
+                  <option value="pago">Pago</option>
+                </select>
+              </>
+            );
             return (
-              <div key={f.id} className="grid grid-cols-12 px-4 py-3 items-center" style={{ borderBottom: '1px solid #1C1C1C' }}>
-                <div className="col-span-3">
-                  <div className="text-sm font-semibold">{f.cliente}</div>
-                  <div className="text-xs" style={{ color: '#9A9A9A' }}>{f.projeto}</div>
+              <div key={f.id}>
+                {/* Card — só celular */}
+                <div className="sm:hidden flex flex-col gap-2 px-4 py-3" style={{ borderBottom: '1px solid #1C1C1C' }}>
+                  <div className="flex items-start justify-between">
+                    <div>
+                      <div className="text-sm font-semibold">{f.cliente}</div>
+                      <div className="text-xs" style={{ color: '#9A9A9A' }}>{f.projeto}</div>
+                    </div>
+                    <button onClick={() => excluirLancamento(f)} className="focusable flex-shrink-0" title="Excluir lançamento" style={{ color: '#9A9A9A' }}>
+                      <Trash2 size={14} />
+                    </button>
+                  </div>
+                  <div className="flex justify-between mono text-xs" style={{ color: '#9A9A9A' }}>
+                    <span>Trabalho: {new Date(f.dataTrabalho + 'T00:00:00').toLocaleDateString('pt-BR')}</span>
+                    <span>Pagto: {new Date(f.dataPagamento + 'T00:00:00').toLocaleDateString('pt-BR')}</span>
+                  </div>
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <div className="mono text-sm">{moeda(f.valorBruto ?? f.valor)}</div>
+                      {f.comNF && <div className="mono text-[10px]" style={{ color: '#9A9A9A' }}>líq. {moeda(f.valor)}</div>}
+                    </div>
+                    <div className="flex items-center gap-2">{statusEl}</div>
+                  </div>
                 </div>
-                <div className="col-span-2 mono text-sm" style={{ color: '#9A9A9A' }}>{new Date(f.dataTrabalho + 'T00:00:00').toLocaleDateString('pt-BR')}</div>
-                <div className="col-span-2 mono text-sm" style={{ color: '#9A9A9A' }}>{new Date(f.dataPagamento + 'T00:00:00').toLocaleDateString('pt-BR')}</div>
-                <div className="col-span-2 text-right">
-                  <div className="mono text-sm">{moeda(f.valorBruto ?? f.valor)}</div>
-                  {f.comNF && <div className="mono text-[10px]" style={{ color: '#9A9A9A' }}>líq. {moeda(f.valor)}</div>}
-                </div>
-                <div className="col-span-2 flex justify-end items-center gap-2">
-                  <span
-                    className="mono text-[11px] font-semibold px-2 py-1 rounded"
-                    style={{ color: s.color, background: `${s.color}1F`, border: `1px solid ${s.color}55` }}
-                  >
-                    {s.label.toUpperCase()}
-                  </span>
-                  <select
-                    value={f.pago ? 'pago' : 'pendente'}
-                    onChange={(e) => mudarStatus(f, e.target.value)}
-                    className="focusable rounded text-xs py-1"
-                    title="Alterar status"
-                  >
-                    <option value="pendente">Pendente</option>
-                    <option value="pago">Pago</option>
-                  </select>
-                </div>
-                <div className="col-span-1 flex justify-end">
-                  <button onClick={() => excluirLancamento(f)} className="focusable" title="Excluir lançamento" style={{ color: '#9A9A9A' }}>
-                    <Trash2 size={14} />
-                  </button>
+
+                {/* Linha de tabela — só desktop */}
+                <div className="hidden sm:grid grid-cols-12 px-4 py-3 items-center" style={{ borderBottom: '1px solid #1C1C1C' }}>
+                  <div className="col-span-3">
+                    <div className="text-sm font-semibold">{f.cliente}</div>
+                    <div className="text-xs" style={{ color: '#9A9A9A' }}>{f.projeto}</div>
+                  </div>
+                  <div className="col-span-2 mono text-sm" style={{ color: '#9A9A9A' }}>{new Date(f.dataTrabalho + 'T00:00:00').toLocaleDateString('pt-BR')}</div>
+                  <div className="col-span-2 mono text-sm" style={{ color: '#9A9A9A' }}>{new Date(f.dataPagamento + 'T00:00:00').toLocaleDateString('pt-BR')}</div>
+                  <div className="col-span-2 text-right">
+                    <div className="mono text-sm">{moeda(f.valorBruto ?? f.valor)}</div>
+                    {f.comNF && <div className="mono text-[10px]" style={{ color: '#9A9A9A' }}>líq. {moeda(f.valor)}</div>}
+                  </div>
+                  <div className="col-span-2 flex justify-end items-center gap-2">{statusEl}</div>
+                  <div className="col-span-1 flex justify-end">
+                    <button onClick={() => excluirLancamento(f)} className="focusable" title="Excluir lançamento" style={{ color: '#9A9A9A' }}>
+                      <Trash2 size={14} />
+                    </button>
+                  </div>
                 </div>
               </div>
             );
@@ -1190,7 +1230,7 @@ function TelaFinanceiro({ financas, gastos, demandas, onCriarLancamento, onAtual
       {subAba === 'gastos' && <TelaGastos gastos={gastos} financas={financas} demandas={demandas} onCriar={onCriarGasto} onExcluir={onExcluirGasto} />}
 
       {formAberto && (
-        <div className="fixed inset-0 flex items-center justify-center p-4" style={{ background: 'rgba(0,0,0,0.6)' }}>
+        <div className="fixed inset-0 flex items-start sm:items-center justify-center p-4 overflow-y-auto py-8" style={{ background: 'rgba(0,0,0,0.6)' }}>
           <form onSubmit={adicionar} className="card rounded-lg p-6 w-full max-w-sm">
             <div className="flex items-center justify-between mb-4">
               <h2 className="mono text-sm tracking-widest" style={{ color: '#9A9A9A' }}>NOVO LANÇAMENTO</h2>
@@ -1288,19 +1328,19 @@ function TelaGastos({ gastos, financas, demandas, onCriar, onExcluir }) {
                   )}
                 </div>
               </div>
-              <div className="flex gap-5">
+              <div className="grid grid-cols-3 gap-2 sm:gap-5 sm:flex">
                 <div>
                   <div className="mono text-[10px] tracking-widest" style={{ color: '#9A9A9A' }}>PROJETO</div>
-                  <div className="mono text-sm font-semibold" style={{ color: '#F5C518' }}>{moeda(g.valorProjeto)}</div>
+                  <div className="mono text-xs sm:text-sm font-semibold" style={{ color: '#F5C518' }}>{moeda(g.valorProjeto)}</div>
                   {g.temNF && <div className="mono text-[10px]" style={{ color: '#9A9A9A' }}>líq. {moeda(g.valorLiquido)}</div>}
                 </div>
                 <div>
                   <div className="mono text-[10px] tracking-widest" style={{ color: '#9A9A9A' }}>GASTOS</div>
-                  <div className="mono text-sm font-semibold" style={{ color: '#E63946' }}>{moeda(g.totalGastos)}</div>
+                  <div className="mono text-xs sm:text-sm font-semibold" style={{ color: '#E63946' }}>{moeda(g.totalGastos)}</div>
                 </div>
                 <div>
                   <div className="mono text-[10px] tracking-widest" style={{ color: '#9A9A9A' }}>LUCRO</div>
-                  <div className="mono text-sm font-semibold" style={{ color: g.lucro >= 0 ? '#2ECC71' : '#E63946' }}>{moeda(g.lucro)}</div>
+                  <div className="mono text-xs sm:text-sm font-semibold" style={{ color: g.lucro >= 0 ? '#2ECC71' : '#E63946' }}>{moeda(g.lucro)}</div>
                 </div>
               </div>
             </div>
@@ -1327,7 +1367,7 @@ function TelaGastos({ gastos, financas, demandas, onCriar, onExcluir }) {
       </div>
 
       {formAberto && (
-        <div className="fixed inset-0 flex items-center justify-center p-4" style={{ background: 'rgba(0,0,0,0.6)' }}>
+        <div className="fixed inset-0 flex items-start sm:items-center justify-center p-4 overflow-y-auto py-8" style={{ background: 'rgba(0,0,0,0.6)' }}>
           <form onSubmit={adicionar} className="card rounded-lg p-6 w-full max-w-sm">
             <div className="flex items-center justify-between mb-4">
               <h2 className="mono text-sm tracking-widest" style={{ color: '#9A9A9A' }}>NOVO GASTO</h2>
