@@ -99,6 +99,7 @@ function mapDemandaDoBanco(row) {
     status: row.status,
     dataGravacao: row.data_gravacao,
     datasGravacao: row.datas_gravacao || [],
+    descricao: row.descricao || '',
     valor: Number(row.valor),
     comNF: row.com_nf,
   };
@@ -128,7 +129,7 @@ function mapGastoDoBanco(row) {
   };
 }
 
-const emptyDemanda = { cliente: '', projeto: '', etapa: ETAPAS[0], prazo: '', status: 'andamento', dataGravacao: null, datasGravacao: [], valor: '', comNF: false, dataPagamento: '' };
+const emptyDemanda = { cliente: '', projeto: '', etapa: ETAPAS[0], prazo: '', status: 'andamento', dataGravacao: null, datasGravacao: [], descricao: '', valor: '', comNF: false, dataPagamento: '' };
 const emptyFinanca = { cliente: '', projeto: '', valor: '', dataTrabalho: '', dataPagamento: '', pago: false };
 const emptyGasto = { projeto: '', cliente: '', descricao: '', valor: '', data: '' };
 
@@ -308,6 +309,7 @@ export default function App() {
         status: form.status,
         data_gravacao: form.dataGravacao || null,
         datas_gravacao: form.etapa === 'Gravação' ? (form.datasGravacao || []) : [],
+        descricao: form.descricao || '',
         valor: valorBruto,
         com_nf: form.comNF,
       })
@@ -349,6 +351,7 @@ export default function App() {
         status: form.status,
         data_gravacao: form.dataGravacao || null,
         datas_gravacao: form.etapa === 'Gravação' ? (form.datasGravacao || []) : [],
+        descricao: form.descricao || '',
         valor: valorBruto,
         com_nf: form.comNF,
       })
@@ -614,6 +617,7 @@ function TelaDemandas({ demandas, financas, onCriar, onAtualizar, onExcluir }) {
       status: demanda.status,
       dataGravacao: demanda.dataGravacao || null,
       datasGravacao: demanda.datasGravacao || [],
+      descricao: demanda.descricao || '',
       valor: demanda.valor,
       comNF: demanda.comNF,
       dataPagamento: financaVinculada?.dataPagamento || '',
@@ -742,6 +746,12 @@ function TelaDemandas({ demandas, financas, onCriar, onAtualizar, onExcluir }) {
                         </div>
                       </div>
                     )}
+                    {d.descricao && (
+                      <div>
+                        <div className="mono text-[10px] tracking-widest mb-1" style={{ color: '#9A9A9A' }}>DESCRIÇÃO</div>
+                        <p className="text-sm" style={{ color: '#EDEDED' }}>{d.descricao}</p>
+                      </div>
+                    )}
                   </div>
                 )}
 
@@ -802,6 +812,17 @@ function TelaDemandas({ demandas, financas, onCriar, onAtualizar, onExcluir }) {
               <select value={form.status} onChange={(e) => setForm({ ...form, status: e.target.value })} className="focusable rounded px-3 py-2 text-sm">
                 {Object.entries(STATUS).map(([key, s]) => <option key={key} value={key}>{s.label}</option>)}
               </select>
+
+              <div className="flex flex-col gap-1">
+                <span className="mono text-[11px]" style={{ color: '#9A9A9A' }}>DESCRIÇÃO (opcional)</span>
+                <textarea
+                  placeholder="Detalhes do trabalho, referências, observações..."
+                  value={form.descricao}
+                  onChange={(e) => setForm({ ...form, descricao: e.target.value })}
+                  rows={3}
+                  className="focusable rounded px-3 py-2 text-sm resize-none"
+                />
+              </div>
 
               <div className="flex flex-col gap-1">
                 <span className="mono text-[11px]" style={{ color: '#9A9A9A' }}>VALOR DO TRABALHO (R$)</span>
@@ -878,12 +899,12 @@ function TelaAgenda({ demandas, financas }) {
     const map = {};
     const add = (data, ev) => { if (!data) return; if (!map[data]) map[data] = []; map[data].push(ev); };
     demandas.forEach((d) => {
-      if (d.etapa === 'Briefing') add(d.prazo, { id: `b-${d.id}`, titulo: `Briefing — ${d.projeto}`, tipo: 'briefing', cliente: d.cliente, diaTodo: true });
+      if (d.etapa === 'Briefing') add(d.prazo, { id: `b-${d.id}`, titulo: `Briefing — ${d.projeto}`, tipo: 'briefing', cliente: d.cliente, diaTodo: true, descricao: d.descricao });
       if (d.etapa === 'Gravação') {
         const diasGravacao = (d.datasGravacao && d.datasGravacao.length > 0) ? d.datasGravacao : (d.dataGravacao ? [d.dataGravacao] : [d.prazo]);
-        diasGravacao.forEach((data, idx) => add(data, { id: `g-${d.id}-${idx}`, titulo: `Gravação — ${d.projeto}`, tipo: 'gravacao', cliente: d.cliente, diaTodo: true }));
+        diasGravacao.forEach((data, idx) => add(data, { id: `g-${d.id}-${idx}`, titulo: `Gravação — ${d.projeto}`, tipo: 'gravacao', cliente: d.cliente, diaTodo: true, descricao: d.descricao }));
       }
-      if (d.etapa === 'Entrega') add(d.prazo, { id: `e-${d.id}`, titulo: `Entrega — ${d.projeto}`, tipo: 'entrega', cliente: d.cliente, diaTodo: true });
+      if (d.etapa === 'Entrega') add(d.prazo, { id: `e-${d.id}`, titulo: `Entrega — ${d.projeto}`, tipo: 'entrega', cliente: d.cliente, diaTodo: true, descricao: d.descricao });
     });
     financas.forEach((f) => add(f.dataPagamento, { id: `p-${f.id}`, titulo: `Pagamento — ${f.projeto}`, tipo: 'pagamento', cliente: f.cliente, diaTodo: true }));
     eventosManuais.forEach((ev) => {
